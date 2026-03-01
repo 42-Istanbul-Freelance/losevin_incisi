@@ -1,0 +1,59 @@
+// Prisma Schema - LÖSEV İnci Gönüllülük Takip Sistemi
+// Veritabanı: SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// ENUM yerine kullanılacak sabitler
+// SQLite enum desteklemediği için String kullanıyoruz.
+// Uygulama katmanında Zod ile doğrulama yapılacak.
+// ──────────────────────────────────────────────
+
+model User {
+  id               String     @id @default(cuid())
+  adSoyad          String
+  email            String     @unique
+  sifre            String     // Hashlenmiş şifre
+  okul             String
+  sinif            String
+  rol              String     @default("STUDENT") // STUDENT | TEACHER | ADMIN
+  tcKimlik         String?    // Opsiyonel
+  olusturulmaTarihi DateTime  @default(now())
+
+  // İlişkiler
+  faaliyetler      Activity[]
+  rozetler         Badge[]
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  tarih     DateTime
+  tur       String   // SEMINER | STANT | BAGIS | KERMES | SOSYAL_MEDYA | FARKINDALIK
+  saat      Float    // Ondalıklı saat desteği (ör: 3.5)
+  aciklama  String
+  durum     String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  kanitUrl  String?  // Opsiyonel
+
+  // İlişki: Öğrenci (User) ile Many-to-One
+  ogrenciId String
+  ogrenci   User     @relation(fields: [ogrenciId], references: [id], onDelete: Cascade)
+
+  olusturulmaTarihi DateTime @default(now())
+}
+
+model Badge {
+  id            String   @id @default(cuid())
+  tur           String   // BRONZ | GUMUS | ALTIN | PLATIN
+  kazanmaTarihi DateTime @default(now())
+
+  // İlişki: Öğrenci (User) ile Many-to-One
+  ogrenciId String
+  ogrenci   User   @relation(fields: [ogrenciId], references: [id], onDelete: Cascade)
+}
